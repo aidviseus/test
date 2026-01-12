@@ -508,19 +508,22 @@
 
         // Export schedule to PDF
         function exportToPDF() {
-            // Create a clone of the container for PDF export
+            // Create a container for PDF export
             const element = document.createElement('div');
-            element.style.padding = '20px';
+            element.style.width = '100%';
+            element.style.padding = '15px';
             element.style.backgroundColor = 'white';
             element.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+            element.style.fontSize = '12px';
 
             // Add title
             const title = document.createElement('h1');
             title.textContent = 'Student Presentation Schedule';
             title.style.textAlign = 'center';
             title.style.color = '#333';
-            title.style.marginBottom = '20px';
-            title.style.fontSize = '24px';
+            title.style.marginBottom = '10px';
+            title.style.marginTop = '0';
+            title.style.fontSize = '22px';
             element.appendChild(title);
 
             // Add date info
@@ -528,24 +531,112 @@
             dateInfo.textContent = 'January 22, 2026 - April 30, 2026 (Excluding March 12 & 26)';
             dateInfo.style.textAlign = 'center';
             dateInfo.style.color = '#666';
-            dateInfo.style.marginBottom = '30px';
+            dateInfo.style.marginBottom = '20px';
+            dateInfo.style.fontSize = '11px';
             element.appendChild(dateInfo);
 
-            // Clone and add the schedule
+            // Clone and style the schedule for PDF
             const scheduleClone = document.getElementById('schedule').cloneNode(true);
+            const weeks = scheduleClone.querySelectorAll('.week');
+
+            weeks.forEach((week, index) => {
+                // Add page break before certain weeks to prevent awkward breaks
+                week.style.pageBreakInside = 'avoid';
+                week.style.breakInside = 'avoid';
+                week.style.marginBottom = '12px';
+                week.style.padding = '12px';
+
+                // Add page break after every 3 weeks for better pagination
+                if ((index + 1) % 3 === 0 && index < weeks.length - 1) {
+                    week.style.pageBreakAfter = 'always';
+                    week.style.breakAfter = 'always';
+                }
+
+                // Style week title
+                const weekTitle = week.querySelector('h3');
+                if (weekTitle) {
+                    weekTitle.style.fontSize = '14px';
+                    weekTitle.style.marginBottom = '10px';
+                }
+
+                // Style presentation slots
+                const presentations = week.querySelectorAll('.presentation');
+                presentations.forEach(pres => {
+                    pres.style.padding = '10px';
+                    pres.style.marginBottom = '5px';
+                    pres.style.pageBreakInside = 'avoid';
+                    pres.style.breakInside = 'avoid';
+
+                    const presNumber = pres.querySelector('.presentation-number');
+                    if (presNumber) {
+                        presNumber.style.fontSize = '10px';
+                    }
+
+                    const studentName = pres.querySelector('.student-name');
+                    if (studentName) {
+                        studentName.style.fontSize = '12px';
+                    }
+                });
+            });
+
             element.appendChild(scheduleClone);
 
-            // Clone and add the stats
+            // Add page break before stats
+            const pageBreak = document.createElement('div');
+            pageBreak.style.pageBreakBefore = 'always';
+            pageBreak.style.breakBefore = 'always';
+            element.appendChild(pageBreak);
+
+            // Clone and style stats
             const statsClone = document.querySelector('.stats').cloneNode(true);
+            statsClone.style.marginTop = '20px';
+            statsClone.style.pageBreakInside = 'avoid';
+            statsClone.style.breakInside = 'avoid';
+
+            const statsTitle = statsClone.querySelector('h3');
+            if (statsTitle) {
+                statsTitle.style.fontSize = '16px';
+                statsTitle.style.marginBottom = '10px';
+            }
+
+            const statItems = statsClone.querySelectorAll('.stat-item');
+            statItems.forEach(item => {
+                item.style.padding = '8px';
+                const studentName = item.querySelector('.student');
+                if (studentName) {
+                    studentName.style.fontSize = '11px';
+                }
+                const count = item.querySelector('.count');
+                if (count) {
+                    count.style.fontSize = '10px';
+                }
+            });
+
             element.appendChild(statsClone);
 
-            // Configure PDF options
+            // Configure PDF options with better settings
             const opt = {
-                margin: 10,
+                margin: [10, 10, 10, 10],
                 filename: 'presentation-schedule.pdf',
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                html2canvas: {
+                    scale: 2,
+                    useCORS: true,
+                    letterRendering: true,
+                    logging: false
+                },
+                jsPDF: {
+                    unit: 'mm',
+                    format: 'a4',
+                    orientation: 'portrait',
+                    compress: true
+                },
+                pagebreak: {
+                    mode: ['avoid-all', 'css', 'legacy'],
+                    before: '.page-break-before',
+                    after: '.page-break-after',
+                    avoid: ['.week', '.presentation', '.stat-item']
+                }
             };
 
             // Generate and download PDF
