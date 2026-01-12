@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Presentation Scheduler</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -217,6 +218,37 @@
             display: block;
         }
 
+        .export-btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+
+        .export-btn:hover {
+            box-shadow: 0 5px 20px rgba(40, 167, 69, 0.4);
+        }
+
+        /* PDF-specific styles */
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .container {
+                box-shadow: none;
+                padding: 20px;
+            }
+
+            .student-input-section,
+            .controls {
+                display: none !important;
+            }
+
+            .week {
+                page-break-inside: avoid;
+                margin-bottom: 15px;
+            }
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 20px;
@@ -262,6 +294,7 @@
         <div id="scheduleSection">
             <div class="controls">
                 <button onclick="generateSchedule()">🔄 Generate New Schedule</button>
+                <button class="export-btn" onclick="exportToPDF()">📄 Export to PDF</button>
             </div>
 
             <div id="schedule" class="schedule"></div>
@@ -471,6 +504,52 @@
                 statDiv.appendChild(count);
                 statsDiv.appendChild(statDiv);
             });
+        }
+
+        // Export schedule to PDF
+        function exportToPDF() {
+            // Create a clone of the container for PDF export
+            const element = document.createElement('div');
+            element.style.padding = '20px';
+            element.style.backgroundColor = 'white';
+            element.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+
+            // Add title
+            const title = document.createElement('h1');
+            title.textContent = 'Student Presentation Schedule';
+            title.style.textAlign = 'center';
+            title.style.color = '#333';
+            title.style.marginBottom = '20px';
+            title.style.fontSize = '24px';
+            element.appendChild(title);
+
+            // Add date info
+            const dateInfo = document.createElement('p');
+            dateInfo.textContent = 'January 22, 2026 - April 30, 2026 (Excluding March 12 & 26)';
+            dateInfo.style.textAlign = 'center';
+            dateInfo.style.color = '#666';
+            dateInfo.style.marginBottom = '30px';
+            element.appendChild(dateInfo);
+
+            // Clone and add the schedule
+            const scheduleClone = document.getElementById('schedule').cloneNode(true);
+            element.appendChild(scheduleClone);
+
+            // Clone and add the stats
+            const statsClone = document.querySelector('.stats').cloneNode(true);
+            element.appendChild(statsClone);
+
+            // Configure PDF options
+            const opt = {
+                margin: 10,
+                filename: 'presentation-schedule.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            // Generate and download PDF
+            html2pdf().set(opt).from(element).save();
         }
 
         // Initialize on page load
