@@ -34,6 +34,13 @@
             font-size: 2.5em;
         }
 
+        h2 {
+            color: #333;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
         .info {
             text-align: center;
             color: #666;
@@ -47,6 +54,45 @@
             padding: 8px 16px;
             background: #f0f0f0;
             border-radius: 8px;
+        }
+
+        .student-input-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .student-inputs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-group label {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+
+        .input-group input {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
         }
 
         .controls {
@@ -64,6 +110,7 @@
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
             font-weight: 600;
+            margin: 5px;
         }
 
         button:hover {
@@ -139,7 +186,7 @@
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 10px;
         }
 
@@ -162,6 +209,14 @@
             font-size: 0.9em;
         }
 
+        #scheduleSection {
+            display: none;
+        }
+
+        #scheduleSection.visible {
+            display: block;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 20px;
@@ -179,6 +234,10 @@
             .presentations {
                 grid-template-columns: 1fr;
             }
+
+            .student-inputs {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -187,39 +246,103 @@
         <h1>📅 Student Presentation Scheduler</h1>
         <div class="info">
             <span><strong>13</strong> Students</span>
-            <span><strong>15</strong> Weeks</span>
+            <span><strong>13</strong> Weeks</span>
             <span><strong>5</strong> Presentations/Week</span>
             <span><strong>5</strong> Per Student</span>
-            <span><strong>65</strong> Assigned / <strong>75</strong> Total Slots</span>
         </div>
 
-        <div class="controls">
-            <button onclick="generateSchedule()">🔄 Generate New Schedule</button>
+        <div class="student-input-section">
+            <h2>👥 Enter Student Names</h2>
+            <div class="student-inputs" id="studentInputs"></div>
+            <div class="controls">
+                <button onclick="saveStudentsAndGenerate()">💾 Save Names & Generate Schedule</button>
+            </div>
         </div>
 
-        <div id="schedule" class="schedule"></div>
+        <div id="scheduleSection">
+            <div class="controls">
+                <button onclick="generateSchedule()">🔄 Generate New Schedule</button>
+            </div>
 
-        <div class="stats">
-            <h3>📊 Presentation Distribution</h3>
-            <div id="stats" class="stats-grid"></div>
+            <div id="schedule" class="schedule"></div>
+
+            <div class="stats">
+                <h3>📊 Presentation Distribution</h3>
+                <div id="stats" class="stats-grid"></div>
+            </div>
         </div>
     </div>
 
     <script>
         const STUDENTS = 13;
-        const WEEKS = 15;
         const PRESENTATIONS_PER_WEEK = 5;
-        const TOTAL_SLOTS = WEEKS * PRESENTATIONS_PER_WEEK; // 75
+        const PRESENTATIONS_PER_STUDENT = 5;
+
+        // Class dates: Thursdays from Jan 22 to Apr 30, 2026, skipping Mar 12 and Mar 26
+        const CLASS_DATES = [
+            new Date(2026, 0, 22),  // Jan 22
+            new Date(2026, 0, 29),  // Jan 29
+            new Date(2026, 1, 5),   // Feb 5
+            new Date(2026, 1, 12),  // Feb 12
+            new Date(2026, 1, 19),  // Feb 19
+            new Date(2026, 1, 26),  // Feb 26
+            new Date(2026, 2, 5),   // Mar 5
+            // Skip Mar 12
+            new Date(2026, 2, 19),  // Mar 19
+            // Skip Mar 26
+            new Date(2026, 3, 2),   // Apr 2
+            new Date(2026, 3, 9),   // Apr 9
+            new Date(2026, 3, 16),  // Apr 16
+            new Date(2026, 3, 23),  // Apr 23
+            new Date(2026, 3, 30)   // Apr 30
+        ];
+
+        const WEEKS = CLASS_DATES.length; // 13 weeks
+
+        let studentNames = [];
+
+        // Initialize input fields
+        function initializeInputs() {
+            const inputsDiv = document.getElementById('studentInputs');
+            for (let i = 1; i <= STUDENTS; i++) {
+                const inputGroup = document.createElement('div');
+                inputGroup.className = 'input-group';
+
+                const label = document.createElement('label');
+                label.textContent = `Student ${i}`;
+
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.id = `student${i}`;
+                input.placeholder = `Enter name for Student ${i}`;
+
+                inputGroup.appendChild(label);
+                inputGroup.appendChild(input);
+                inputsDiv.appendChild(inputGroup);
+            }
+        }
+
+        function saveStudentsAndGenerate() {
+            studentNames = [];
+            for (let i = 1; i <= STUDENTS; i++) {
+                const input = document.getElementById(`student${i}`);
+                const name = input.value.trim();
+                studentNames.push(name || `Student ${i}`);
+            }
+
+            document.getElementById('scheduleSection').classList.add('visible');
+            generateSchedule();
+
+            // Scroll to schedule
+            document.getElementById('scheduleSection').scrollIntoView({ behavior: 'smooth' });
+        }
 
         function generateSchedule() {
-            // Each student does exactly 5 presentations
-            const PRESENTATIONS_PER_STUDENT = 5;
-
             // Create array of students with their presentation counts
             let students = [];
-            for (let i = 1; i <= STUDENTS; i++) {
+            for (let i = 0; i < STUDENTS; i++) {
                 students.push({
-                    name: `Student ${i}`,
+                    name: studentNames[i] || `Student ${i + 1}`,
                     count: PRESENTATIONS_PER_STUDENT,
                     remaining: PRESENTATIONS_PER_STUDENT,
                     lastWeek: -3 // Initialize to -3 so they can present in week 1
@@ -275,6 +398,11 @@
             displayStats(students);
         }
 
+        function formatDate(date) {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            return date.toLocaleDateString('en-US', options);
+        }
+
         function displaySchedule(schedule) {
             const scheduleDiv = document.getElementById('schedule');
             scheduleDiv.innerHTML = '';
@@ -284,7 +412,7 @@
                 weekDiv.className = 'week';
 
                 const weekTitle = document.createElement('h3');
-                weekTitle.textContent = `Week ${index + 1}`;
+                weekTitle.textContent = `Week ${index + 1}: ${formatDate(CLASS_DATES[index])}`;
                 weekDiv.appendChild(weekTitle);
 
                 const presentationsDiv = document.createElement('div');
@@ -326,13 +454,7 @@
             const statsDiv = document.getElementById('stats');
             statsDiv.innerHTML = '';
 
-            // Sort students by name (Student 1, Student 2, etc.)
-            students.sort((a, b) => {
-                const numA = parseInt(a.name.split(' ')[1]);
-                const numB = parseInt(b.name.split(' ')[1]);
-                return numA - numB;
-            });
-
+            // Sort by original order
             students.forEach(student => {
                 const statDiv = document.createElement('div');
                 statDiv.className = 'stat-item';
@@ -351,8 +473,8 @@
             });
         }
 
-        // Generate initial schedule on page load
-        generateSchedule();
+        // Initialize on page load
+        initializeInputs();
     </script>
 </body>
 </html>
