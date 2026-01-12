@@ -1,12 +1,345 @@
-Hello World
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Hello World</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Presentation Scheduler</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .info {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .info span {
+            display: inline-block;
+            margin: 0 15px;
+            padding: 8px 16px;
+            background: #f0f0f0;
+            border-radius: 8px;
+        }
+
+        .controls {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: 600;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .schedule {
+            display: grid;
+            gap: 20px;
+        }
+
+        .week {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            border-left: 5px solid #667eea;
+        }
+
+        .week h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .presentations {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .presentation {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .presentation:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .presentation-number {
+            font-weight: 600;
+            color: #667eea;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .student-name {
+            color: #333;
+            font-size: 1.1em;
+            font-weight: 500;
+        }
+
+        .stats {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+
+        .stats h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+        }
+
+        .stat-item {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-item .student {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-item .count {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .info span {
+                display: block;
+                margin: 5px 0;
+            }
+
+            .presentations {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
-  <h1>Hello World</h1>
-  <p>Welcome to my first GitHub-hosted page.</p>
+    <div class="container">
+        <h1>📅 Student Presentation Scheduler</h1>
+        <div class="info">
+            <span><strong>13</strong> Students</span>
+            <span><strong>15</strong> Weeks</span>
+            <span><strong>5</strong> Presentations/Week</span>
+            <span><strong>75</strong> Total Slots</span>
+        </div>
+
+        <div class="controls">
+            <button onclick="generateSchedule()">🔄 Generate New Schedule</button>
+        </div>
+
+        <div id="schedule" class="schedule"></div>
+
+        <div class="stats">
+            <h3>📊 Presentation Distribution</h3>
+            <div id="stats" class="stats-grid"></div>
+        </div>
+    </div>
+
+    <script>
+        const STUDENTS = 13;
+        const WEEKS = 15;
+        const PRESENTATIONS_PER_WEEK = 5;
+        const TOTAL_SLOTS = WEEKS * PRESENTATIONS_PER_WEEK; // 75
+
+        function generateSchedule() {
+            // Calculate how many presentations each student should do
+            const basePresentation = Math.floor(TOTAL_SLOTS / STUDENTS); // 5
+            const extraSlots = TOTAL_SLOTS % STUDENTS; // 10
+
+            // Create array of students with their presentation counts
+            let students = [];
+            for (let i = 1; i <= STUDENTS; i++) {
+                const count = i <= extraSlots ? basePresentation + 1 : basePresentation;
+                students.push({
+                    name: `Student ${i}`,
+                    count: count,
+                    remaining: count,
+                    lastWeek: -3 // Initialize to -3 so they can present in week 1
+                });
+            }
+
+            // Generate schedule
+            let schedule = [];
+
+            for (let week = 0; week < WEEKS; week++) {
+                let weekPresentations = [];
+
+                for (let slot = 0; slot < PRESENTATIONS_PER_WEEK; slot++) {
+                    // Find eligible students (have remaining presentations and didn't present last week)
+                    let eligible = students.filter(s =>
+                        s.remaining > 0 && (week - s.lastWeek) >= 2
+                    );
+
+                    // If no one is eligible with 2-week gap, try 1-week gap
+                    if (eligible.length === 0) {
+                        eligible = students.filter(s =>
+                            s.remaining > 0 && (week - s.lastWeek) >= 1
+                        );
+                    }
+
+                    // If still no one eligible, take anyone with remaining presentations
+                    if (eligible.length === 0) {
+                        eligible = students.filter(s => s.remaining > 0);
+                    }
+
+                    if (eligible.length === 0) break;
+
+                    // Prioritize students with more remaining presentations
+                    eligible.sort((a, b) => b.remaining - a.remaining);
+
+                    // Add some randomness while favoring those who need more presentations
+                    let selectedIndex = Math.floor(Math.random() * Math.min(3, eligible.length));
+                    let selected = eligible[selectedIndex];
+
+                    weekPresentations.push(selected.name);
+                    selected.remaining--;
+                    selected.lastWeek = week;
+                }
+
+                schedule.push(weekPresentations);
+            }
+
+            displaySchedule(schedule);
+            displayStats(students);
+        }
+
+        function displaySchedule(schedule) {
+            const scheduleDiv = document.getElementById('schedule');
+            scheduleDiv.innerHTML = '';
+
+            schedule.forEach((week, index) => {
+                const weekDiv = document.createElement('div');
+                weekDiv.className = 'week';
+
+                const weekTitle = document.createElement('h3');
+                weekTitle.textContent = `Week ${index + 1}`;
+                weekDiv.appendChild(weekTitle);
+
+                const presentationsDiv = document.createElement('div');
+                presentationsDiv.className = 'presentations';
+
+                week.forEach((student, slotIndex) => {
+                    const presentationDiv = document.createElement('div');
+                    presentationDiv.className = 'presentation';
+
+                    const numberDiv = document.createElement('div');
+                    numberDiv.className = 'presentation-number';
+                    numberDiv.textContent = `Slot ${slotIndex + 1}`;
+
+                    const studentDiv = document.createElement('div');
+                    studentDiv.className = 'student-name';
+                    studentDiv.textContent = student;
+
+                    presentationDiv.appendChild(numberDiv);
+                    presentationDiv.appendChild(studentDiv);
+                    presentationsDiv.appendChild(presentationDiv);
+                });
+
+                weekDiv.appendChild(presentationsDiv);
+                scheduleDiv.appendChild(weekDiv);
+            });
+        }
+
+        function displayStats(students) {
+            const statsDiv = document.getElementById('stats');
+            statsDiv.innerHTML = '';
+
+            // Sort students by name (Student 1, Student 2, etc.)
+            students.sort((a, b) => {
+                const numA = parseInt(a.name.split(' ')[1]);
+                const numB = parseInt(b.name.split(' ')[1]);
+                return numA - numB;
+            });
+
+            students.forEach(student => {
+                const statDiv = document.createElement('div');
+                statDiv.className = 'stat-item';
+
+                const studentName = document.createElement('div');
+                studentName.className = 'student';
+                studentName.textContent = student.name;
+
+                const count = document.createElement('div');
+                count.className = 'count';
+                count.textContent = `${student.count} presentations`;
+
+                statDiv.appendChild(studentName);
+                statDiv.appendChild(count);
+                statsDiv.appendChild(statDiv);
+            });
+        }
+
+        // Generate initial schedule on page load
+        generateSchedule();
+    </script>
 </body>
 </html>
