@@ -189,7 +189,8 @@
             <span><strong>13</strong> Students</span>
             <span><strong>15</strong> Weeks</span>
             <span><strong>5</strong> Presentations/Week</span>
-            <span><strong>75</strong> Total Slots</span>
+            <span><strong>5</strong> Per Student</span>
+            <span><strong>65</strong> Assigned / <strong>75</strong> Total Slots</span>
         </div>
 
         <div class="controls">
@@ -211,18 +212,16 @@
         const TOTAL_SLOTS = WEEKS * PRESENTATIONS_PER_WEEK; // 75
 
         function generateSchedule() {
-            // Calculate how many presentations each student should do
-            const basePresentation = Math.floor(TOTAL_SLOTS / STUDENTS); // 5
-            const extraSlots = TOTAL_SLOTS % STUDENTS; // 10
+            // Each student does exactly 5 presentations
+            const PRESENTATIONS_PER_STUDENT = 5;
 
             // Create array of students with their presentation counts
             let students = [];
             for (let i = 1; i <= STUDENTS; i++) {
-                const count = i <= extraSlots ? basePresentation + 1 : basePresentation;
                 students.push({
                     name: `Student ${i}`,
-                    count: count,
-                    remaining: count,
+                    count: PRESENTATIONS_PER_STUDENT,
+                    remaining: PRESENTATIONS_PER_STUDENT,
                     lastWeek: -3 // Initialize to -3 so they can present in week 1
                 });
             }
@@ -251,7 +250,11 @@
                         eligible = students.filter(s => s.remaining > 0);
                     }
 
-                    if (eligible.length === 0) break;
+                    if (eligible.length === 0) {
+                        // No students available, mark as empty
+                        weekPresentations.push(null);
+                        continue;
+                    }
 
                     // Prioritize students with more remaining presentations
                     eligible.sort((a, b) => b.remaining - a.remaining);
@@ -291,13 +294,23 @@
                     const presentationDiv = document.createElement('div');
                     presentationDiv.className = 'presentation';
 
+                    if (student === null) {
+                        presentationDiv.style.opacity = '0.5';
+                        presentationDiv.style.background = '#f0f0f0';
+                    }
+
                     const numberDiv = document.createElement('div');
                     numberDiv.className = 'presentation-number';
                     numberDiv.textContent = `Slot ${slotIndex + 1}`;
 
                     const studentDiv = document.createElement('div');
                     studentDiv.className = 'student-name';
-                    studentDiv.textContent = student;
+                    studentDiv.textContent = student || 'No presentation';
+
+                    if (student === null) {
+                        studentDiv.style.color = '#999';
+                        studentDiv.style.fontStyle = 'italic';
+                    }
 
                     presentationDiv.appendChild(numberDiv);
                     presentationDiv.appendChild(studentDiv);
